@@ -2,14 +2,16 @@ import csv
 import aiohttp
 import asyncio
 from datetime import datetime
+from send import enviar_mensagem
+import os
 
-def mudar_status(municipio, novoStatus):
+def mudar_status(servico, novoStatus):
     linhas = []
 
     with open('pec_urls.csv', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=';')
         for linha in reader:
-            if linha[0] == municipio:
+            if linha[0] == servico:
                 linha[2] = novoStatus
             linhas.append(linha)
 
@@ -18,22 +20,22 @@ def mudar_status(municipio, novoStatus):
         writer.writerows(linhas)
 
 
-async def fazer_requisicao(session, url, municipio, statusMunicipio):
+async def fazer_requisicao(session, url, servico, statusMunicipio):
     try:
-        async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=int(os.getenv("TIMEOUT")))) as response:
             if response.status != 200:
                 raise Exception
             if statusMunicipio == "false":
-                print(f"[{datetime.now().strftime('%H:%M:%S')}]: O PEC de {municipio} voltou e se encontra Online.")
-                mudar_status(municipio, 'true')
+                await enviar_mensagem(f"[{datetime.now().strftime('%H:%M:%S')}]: {servico} voltou a ficar Online. ✅")
+                mudar_status(servico, 'true')
     except asyncio.TimeoutError:
         if statusMunicipio == "true":
-            print(f"[{datetime.now().strftime('%H:%M:%S')}]: Ao tentar acessar o PEC de {municipio} durante 10s não foi obtido resposta.")
-            mudar_status(municipio, 'false')
+            await enviar_mensagem(f"[{datetime.now().strftime('%H:%M:%S')}]: {servico} durante 10s não foi obtido resposta. ❌")
+            mudar_status(servico, 'false')
     except Exception:
         if statusMunicipio == "true":
-            print(f"[{datetime.now().strftime('%H:%M:%S')}]: O PEC de {municipio} se encontra Offline.")
-            mudar_status(municipio, 'false')
+            await enviar_mensagem(f"[{datetime.now().strftime('%H:%M:%S')}]:{servico} se encontra Offline. ❌")
+            mudar_status(servico, 'false')
 
 
 async def main():
@@ -47,11 +49,7 @@ async def main():
             await asyncio.gather(*tarefas)
 
 
-async def loop_monitoramento(intervalo=11):
+async def loop_monitoramento(intervalo=int(os.getenv("TIME_REQUESTS"))):
     while True:
         await main()
         await asyncio.sleep(intervalo)
-
-
-if __name__ == "__main__":
-    asyncio.run(loop_monitoramento())
