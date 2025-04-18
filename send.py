@@ -46,7 +46,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     armazenar_usuario(user.id)
 
     await update.message.reply_html(
-        rf"Olá {user.mention_html()}, seja bem-vindo! Aqui você será notificado sempre que algum serviço da Marques Consult apresentar instabilidade ou ficar fora do ar — e também quando tudo voltar ao normal.",
+        rf"Olá {user.mention_html()}, seja bem-vindo! Aqui você será notificado sempre que algum serviço da Marques Consult apresentar instabilidade ou ficar fora do ar, além de ser avisado quando os serviços forem normalizados.",
         reply_markup=ForceReply(selective=True),
     )
 

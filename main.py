@@ -30,7 +30,7 @@ async def fazer_requisicao(session, url, servico, statusMunicipio):
                 mudar_status(servico, 'true')
     except asyncio.TimeoutError:
         if statusMunicipio == "true":
-            await enviar_mensagem(f"[{datetime.now().strftime('%H:%M:%S')}]: {servico} durante 10s não foi obtido resposta. ❌")
+            await enviar_mensagem(f"[{datetime.now().strftime('%H:%M:%S')}]: Foi tentada conexão com {servico} por 10 segundos, mas não houve resposta. ❌")
             mudar_status(servico, 'false')
     except Exception:
         if statusMunicipio == "true":
