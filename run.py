@@ -1,9 +1,10 @@
 import asyncio
-from main import loop_monitoramento
-from send import run_bot
 from dotenv import load_dotenv
 
 load_dotenv()
+
+from main import loop_monitoramento
+from send import run_bot
 
 async def run():
     monitoramento_task = asyncio.create_task(loop_monitoramento())
