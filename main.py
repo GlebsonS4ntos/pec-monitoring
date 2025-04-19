@@ -20,34 +20,38 @@ def mudar_status(servico, novoStatus):
         writer.writerows(linhas)
 
 
-async def fazer_requisicao(session, url, servico, statusMunicipio):
+async def fazer_requisicao(session, url, servico, statusMunicipio, mensagens):
     try:
         async with session.get(url, timeout=aiohttp.ClientTimeout(total=int(os.getenv("TIMEOUT")))) as response:
             if response.status != 200:
                 raise Exception
             if statusMunicipio == "false":
-                await enviar_mensagem(f"[{datetime.now().strftime('%H:%M:%S')}]: {servico} voltou a ficar Online. ✅")
+                mensagens.append(f"[{datetime.now().strftime('%H:%M:%S')}]: {servico} voltou a ficar Online. ✅")
                 mudar_status(servico, 'true')
     except asyncio.TimeoutError:
         if statusMunicipio == "true":
-            await enviar_mensagem(f"[{datetime.now().strftime('%H:%M:%S')}]: Foi tentada conexão com {servico} por 10 segundos, mas não houve resposta. ❌")
+            mensagens.append(f"[{datetime.now().strftime('%H:%M:%S')}]: Foi tentada conexão com {servico} por 10 segundos, mas não houve resposta. ❌")
             mudar_status(servico, 'false')
     except Exception:
         if statusMunicipio == "true":
-            await enviar_mensagem(f"[{datetime.now().strftime('%H:%M:%S')}]:{servico} se encontra Offline. ❌")
+            mensagens.append(f"[{datetime.now().strftime('%H:%M:%S')}]:{servico} se encontra Offline. ❌")
             mudar_status(servico, 'false')
 
 
 async def main():
+    mensagens = []
+
     with open('service_urls.csv') as csvfile:
         file = csv.reader(csvfile, delimiter=';')
         async with aiohttp.ClientSession() as session:
             tarefas = [
-                fazer_requisicao(session, linha[1], linha[0], linha[2])
+                fazer_requisicao(session, linha[1], linha[0], linha[2], mensagens)
                 for linha in file
             ]
             await asyncio.gather(*tarefas)
 
+        if mensagens:
+            await enviar_mensagem("\n".join(mensagens))
 
 async def loop_monitoramento(intervalo=int(os.getenv("TIME_REQUESTS"))):
     while True:
